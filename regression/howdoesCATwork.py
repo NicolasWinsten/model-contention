@@ -10,8 +10,8 @@ import os
 # create program object whose working set resides in L3
 def work_program():
 	arraySize = 1250000		# 1.25M longs -> 10MB which fits into L3 on octomore (45MiB)
-	stride = 8						# large enough stride to ensure cache misses on each array access
-	reps = 99999999				# exorbitant number of repetitions to ensure the timeout normalizes all runtimes
+	stride = 8			# large enough stride to ensure cache misses on each array access
+	reps = 99999999			# exorbitant number of repetitions to ensure the timeout normalizes all runtimes
 	delay = 0
 	command = f"./rpd -with-outer-loop {arraySize} {stride} {reps} {delay}"
 	return Program([command], label="work")
@@ -94,7 +94,9 @@ for cat_mask_bits in range(1,20):
 
 os.system("pqos -R")
 
-# redo the experiment without a "counter-balance" thread
+# redo the experiment without a "counter-balance" thread.
+# this run's behavior is unpredictable to me, sometimes it records many misses,
+# sometimes it doesn't record much at all.
 for cat_mask_bits in range(1,20):
 		cat_mask = int('1'*cat_mask_bits,2)
 		os.system(f"pqos -e 'llc:1={cat_mask}'")

@@ -9,9 +9,8 @@
 #
 # How to reliably determine if the app fully resides in an allocation?
 # Here I just set a threshold for the number of LLC-misses read from perf.
-# Once that metric falls below a certain threshold, terminate
-#
-# Possibly, there's a more reliable 
+# Once that metric falls below a certain threshold, terminate. There's most likely
+# a better scheme than that.
 
 
 CACHE_WAYS=20

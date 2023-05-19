@@ -21,7 +21,7 @@ See regression/howdoesCATwork.py to see an example of it being used.
 
 ## setup
 Note: you will need root access to make use of this repo
-(this is just the steps I take)
+(I do these steps as root on octomore)
 
 ### enabling hugepages
 To enable hugepages, we make changes to the grub file:

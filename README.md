@@ -39,19 +39,27 @@ awk '/HugePages_Total|Hugepagesize/ {print $0}' /proc/meminfo
 ```
 
 ### msr-safe
-Follow the instructions at https://github.com/LLNL/msr-safe.
+https://github.com/LLNL/msr-safe
 (You will need to clone the repository outside of octomore -- on cztb2 for example -- and continue the setup on octomore)
+```
+# outside of octomore
+git clone https://github.com/LLNL/msr-safe
+# back on octomore
+cd msr-safe
+make
+sudo insmod ./msr-safe.ko
+```
 
 For what we need out of variorium, we need to adjust the msr_allowlist.
 ```
 # I go overkill and set all the bits on msr 1A0 because I don't know which exact bits are necessary
-sed -i.bak 's/^0x000001A0.*$/0x000001A0 0xFFFFFFFFFFFFFFFF/' /dev/cpu/msr_allowlist
+cat msr_allowlist1A0.bak > /dev/cpu/msr_allowlist
 ```
 
 ### variorium
 https://github.com/LLNL/variorum
 
-Like before, follow the setup instructions but clone the repo outside of octomore.
+Like before, clone the repo outside of octomore. Then follow build instructions on octomore.
 Once built, there will be an executable in the examples directory thatcan be used to enable/disable turbo.
 
 ### determining characteristics of the cache

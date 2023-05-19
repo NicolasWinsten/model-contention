@@ -1,9 +1,10 @@
 # Author: Nicolas Winsten, nicolasd.winsten@gmail.com
+# Python: 3.10.6
 #
 # This module provides an interface for running apps together
 # and collecting metrics from their execution
 #
-
+#
 
 import sys
 import os
@@ -124,7 +125,7 @@ class ProgramSet:
 
 	
   # set flag to false/true whether you want to automatically assign CAT masks in the created script
-  def setAutoCAT(self, flag): self.autoAssignCAT = flag
+	def setAutoCAT(self, flag): self.autoAssignCAT = flag
 
 	def setCpus(self, cpus: Iterable[int]):
 		self.cpus = sorted([*set(cpus)])
@@ -236,7 +237,7 @@ class ProgramSet:
     # write out the commands
 		line(''.join([f"{exe.commandStr} & pids+=($!)\n" for group in execs for exe in group]))
 		# write the script barrier that waits for all commands to finish
-    total_processes = sum(map(lambda exe: len(exe), execs))
+		total_processes = sum(map(lambda exe: len(exe), execs))
 		line(''.join(["wait ${pids[" + str(i) + "]}\n" for i in range(total_processes)]))
 
 		# clean up cache allocations

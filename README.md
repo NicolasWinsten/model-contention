@@ -18,6 +18,7 @@ Cache allocation technology can be leveraged using the `pqos` command. This allo
 
 
 ## setup
+Note: you will need root access to make use of this repo
 (this is just the steps I take)
 
 ### enabling hugepages

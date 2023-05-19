@@ -69,3 +69,18 @@ Together with `lscpu`, it should provide enough understanding:
 getconf -a | grep CACHE
 ```
 
+## possible benchmarks to use
+AMG
+HPCG
+NAMD
+SNAP
+Stream
+XSBench-20
+graph500
+BDAS
+LULESH
+Quicksilver
+STRIDE
+UMT
+coral2
+lammps

@@ -16,6 +16,8 @@ This is important for gathering meaningful measurements by disallowing dynamic c
 ### CAT
 Cache allocation technology can be leveraged using the `pqos` command. This allows you to set degrees of isolation and capacity that an app has in the cache.
 
+See regression/howdoesCATwork.py to see an example of it being used.
+
 
 ## setup
 Note: you will need root access to make use of this repo

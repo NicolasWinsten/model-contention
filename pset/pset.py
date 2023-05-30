@@ -64,6 +64,7 @@ class Feature:
 	name : str
 	combiner: Callable[List[Any], Any]
 
+# the parens just mean that PerfCounter inherits from Feature
 @dataclass
 class PerfCounter(Feature):
 	"""Extracted from perf output"""
@@ -87,10 +88,11 @@ def timestamp() -> int:
 # create a Program using a command string, or a list of command strings (that will run concurrently)
 @dataclass
 class Program:
-	def __init__(self, commands: str | Iterable[str], label: str):
+	def __init__(self, commands: str | Iterable[str], label: str):  #"|" is a hint of union
 		self.commands = [commands] if type(commands) == str else commands
 		self.label = label
 	
+        #allows object descriptor to be placed within a string (and evaluated)
 	def __repr__(self):
 		return "%s(%r)" % (self.__class__, self.__dict__) 
 
@@ -111,7 +113,7 @@ class Execution:
 class ProgramSet:
 	def __init__(self, programs: List[Program] = [], cpus: Iterable[int] = [], dir: str = None, timeout: str = ""):
 		self.timeout = timeout
-		self.dir = dir if dir else f"nickwinsten-{timestamp()}"
+		self.dir = dir if dir else f"nickwinsten-{timestamp()}"  #f means eval w/in quotes
 		self.programs = programs
 		self.features = []
 		self.setCpus(cpus)
@@ -120,8 +122,9 @@ class ProgramSet:
 	def __repr__(self):
 		return "%s(%r)" % (self.__class__, self.__dict__)
 
+        # the lambda is first arg to map; this creates a list of feature names
 	def feats(self):
-		return list(map(lambda f: f.name, self.features))
+		return list(map(lambda f: f.name, self.features))  
 
 	
   # set flag to false/true whether you want to automatically assign CAT masks in the created script
@@ -139,16 +142,17 @@ class ProgramSet:
   #   combiner - function to combine the metric from several threads/executions
 	def addEvent(self, event: str, combiner = sum):
 		f = PerfCounter(event, combiner)
-		if f not in self.features:
+		if f not in self.features:  # won't add same event twice
 			self.features.insert(0, f)
 
   # define a feature that is computed from several other features
   #
   # example:
   #   ps.computeFeature("demand", lambda x,y:x/y, "LLC-misses", "cycles")
+  # note that *events is a variable length arg; args collected into a list
 	def computeFeature(self, name: str, f, *events, combiner = sum):
 		fs = list(map(lambda f: f.name, self.features))
-		if not all(map(lambda e: e in fs, events)):
+		if not all(map(lambda e: e in fs, events)):  # do I know about all events?
 			err("events", *events, "not defined")
 			exit(1)
 		f = Computed(name, combiner, f, events)
@@ -164,12 +168,14 @@ class ProgramSet:
   #   ps.extractFeature("hwthread took (\d+) seconds", time=1)
   #
   # Note: the extracted features are assumed to be numbers
+  # two stars means that there is an argument name and argument value
 	def extractFeature(self, pattern, combiner = sum, **group_names):
 		for name, group in group_names.items():
 			self.features.append(Extracted(name, combiner, pattern, group))
 
 	# assign cpu and output filenames to each program thread
 	def createCommands(self, stamp) -> List[List[Execution]]:
+                # takes off first x cpus off the list
 		def take(x, lst):
 			return [lst.pop(0) if lst else None for _ in range(x)]
 
@@ -183,14 +189,17 @@ class ProgramSet:
 				seen_labels[p.label] = 1
 			else:
 				seen_labels[p.label] = x+1
-				prefix += f"-x{x}"		# tag programs with the same label
+				prefix += f"-x{x}"		# tag (avoid) programs with the same label
 
+                        # this avoids using extracted features as perf events
 			perf_events = [f.name for f in self.features if isinstance(f, PerfCounter)]
 			timeout = f"timeout {self.timeout}" if self.timeout else ""
+                        # cpus_to_use is a list
 			cpus_to_use = take(len(p.commands), cpus)
 		
       # for each execution, create its command string
 			exec_group = []			
+                        # it is itertools library; this creates an iterator that goes 1 to infinity
 			for (i, cpu, comm) in zip(it.count(1), cpus_to_use, p.commands):
 				taskset = f"taskset -c {cpu}" if cpu else (err("not enough cpus"), exit(1))
 				sub_prefix = prefix + (f"-i{i}" if len(p.commands) > 1 else "")
@@ -199,6 +208,7 @@ class ProgramSet:
 				perfout = sub_prefix + ".perf"
 				perf = f"perf stat -o {perfout} --no-big-num -e {','.join(perf_events)}" if perf_events else ""
 				commandStr = f"{taskset} {perf} {timeout} {comm} >{stdout} 2>{stderr}".strip()
+                                # exec_group is a list of executions to run concurrently
 				exec_group.append(Execution(commandStr, cpu=cpu, stdout=stdout, stderr=stderr, perfout=perfout))
 			execs.append(exec_group)
 		return execs
@@ -222,6 +232,9 @@ class ProgramSet:
 				err("(CAT error) not enough Classes of Service for the number of cores being used")
 				exit(1)
 			waysPerItem = L3_CACHE_WAYS // numItems
+                        # create the binary string for the CAT bitmask
+                        # the "2" means the base of the number string; convert to int
+                        # note that when i == 0, will get just a 1; i == 1, get 10, etc.
 			def mkMask(i): return int('1'*waysPerItem + '0'*i*waysPerItem, 2)
 			return [mkMask(i) for i in range(numItems)]
 		
@@ -232,11 +245,14 @@ class ProgramSet:
 				line(f"pqos -e 'llc:{clazz}={catMask}'")
 				line(f"pqos -a 'llc:{clazz}={cpu}'")
 		
+                # array to capture pids to later wait for all to be done
+                # explicit way to implement waiting for all
 		line("declare -a pids=()")
 
-    # write out the commands
+    # write out the commands; run command, capture pid, and wait for pid later
 		line(''.join([f"{exe.commandStr} & pids+=($!)\n" for group in execs for exe in group]))
 		# write the script barrier that waits for all commands to finish
+                # line below: count how many wait statements needed
 		total_processes = sum(map(lambda exe: len(exe), execs))
 		line(''.join(["wait ${pids[" + str(i) + "]}\n" for i in range(total_processes)]))
 
@@ -256,6 +272,10 @@ class ProgramSet:
   # by accessing the output files produced
 	def getFeatures(self, execution : Execution):
 		stat = dict()
+                # go through each feature
+                # stat is a dictionary with (feature name, value) pairs
+                # extracted features must be found via regex
+                #   note: ***assumes that you are capturing numbers***
 		for feature in self.features:
 			match feature:
 				case PerfCounter(name):
@@ -268,10 +288,11 @@ class ProgramSet:
 					for line in ofile.readlines():
 						m = re.search(regex, line)
 						if m:
-							stat[name] = float(m.group(group))
+							stat[name] = float(m.group(group))  # here assume number
 							break
 					ofile.close()
 				case Computed(name, _, f, args):
+                                        # args is feature name, *map means variable # args, passed to f
 					stat[name] = f(*map(lambda a: stat[a], args))
 		return stat
 
@@ -280,6 +301,7 @@ class ProgramSet:
   # combine the features into single program-level metrics
 	def collectStats(self, execs : List[Execution]):
 		stats = list(map(self.getFeatures, execs))
+                # combine from all instances
 		return {feat.name : feat.combiner(map(lambda stat: stat[feat.name], stats)) for feat in self.features}
 			
 
@@ -302,10 +324,4 @@ class ProgramSet:
 
 		return list(map(self.collectStats, execution_groups))
 	
-		
-
-
-
-
-
 

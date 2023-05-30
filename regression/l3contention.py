@@ -26,12 +26,14 @@ ps.addEvent("offcore_response.all_data_rd.llc_miss.local_dram", sum)
 ps.addEvent("cycles", min)
 
 # extract a feature from each thread's stdout (in this case the array access counter)
+# progress=1 is setting the variable and passing name/value pair to extractFeature
 ps.extractFeature(r"(\d+) out of \d+ accesses completed", sum, progress=1)
 
 # define a derived feature
 ps.computeFeature("demand", lambda x,y: x/y, "offcore_response.all_data_rd.llc_miss.local_dram", "cycles")
 
 scriptName, _ = os.path.splitext(os.path.basename(__file__))
+# name output directory --- use time of day if want to avoid collision
 ps.dir = scriptName + "-data"
 
 data = pd.DataFrame()
@@ -46,6 +48,7 @@ for _ in range(100):
 		# collect baseline features for each program
 		print("running", progX)
 		ps.setPrograms([progX])
+                # X is the descriptive string for this run
 		baseX = ps.run(f"X")[0]
 
 		print("running", progY)

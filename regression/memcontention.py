@@ -42,6 +42,9 @@ for _ in range(100):
 		[delayX, delayY] = random.choices(delays, k=2)
 		[instancesX, instancesY] = random.choices(instances, k=2)
 
+                # creating multiple instances to simulate threads
+                # when go to actual multithreaded program, ideal would be if perf
+                #    is able to collect all counters; then only one instance per program needed
 		progX = program(instancesX, delayX)
 		progY = program(instancesY, delayY)
 

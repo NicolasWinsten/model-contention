@@ -79,7 +79,7 @@ class Computed(Feature):
 @dataclass
 class Extracted(Feature):
 	"""Feature extracted from a pattern in the stdout"""
-	regex: str										# pattern to look for in a line of stdout
+	regex: str	# pattern to look for in a line of stdout
 	group: int
 
 def timestamp() -> int:
@@ -92,7 +92,7 @@ class Program:
 		self.commands = [commands] if type(commands) == str else commands
 		self.label = label
 	
-        #allows object descriptor to be placed within a string (and evaluated)
+        # allows object descriptor to be placed within a string (and evaluated)
 	def __repr__(self):
 		return "%s(%r)" % (self.__class__, self.__dict__) 
 
@@ -127,7 +127,7 @@ class ProgramSet:
 		return list(map(lambda f: f.name, self.features))  
 
 	
-  # set flag to false/true whether you want to automatically assign CAT masks in the created script
+        # set flag to false/true whether you want to automatically assign CAT masks in the created script
 	def setAutoCAT(self, flag): self.autoAssignCAT = flag
 
 	def setCpus(self, cpus: Iterable[int]):
@@ -145,11 +145,11 @@ class ProgramSet:
 		if f not in self.features:  # won't add same event twice
 			self.features.insert(0, f)
 
-  # define a feature that is computed from several other features
-  #
-  # example:
-  #   ps.computeFeature("demand", lambda x,y:x/y, "LLC-misses", "cycles")
-  # note that *events is a variable length arg; args collected into a list
+        # define a feature that is computed from several other features
+        #
+        # example:
+        #   ps.computeFeature("demand", lambda x,y:x/y, "LLC-misses", "cycles")
+        # note that *events is a variable length arg; args collected into a list
 	def computeFeature(self, name: str, f, *events, combiner = sum):
 		fs = list(map(lambda f: f.name, self.features))
 		if not all(map(lambda e: e in fs, events)):  # do I know about all events?
@@ -159,16 +159,16 @@ class ProgramSet:
 		self.features.append(f)
  
 	# extract values from pattern in stdout of programs
-  # params:
-  # pattern : regex string where groups define what to capture 
-  # group_names : key,value pairs where key is the feature name
-  #               and value is the group number
-  #
-  # example:
-  #   ps.extractFeature("hwthread took (\d+) seconds", time=1)
-  #
-  # Note: the extracted features are assumed to be numbers
-  # two stars means that there is an argument name and argument value
+        # params:
+        # pattern : regex string where groups define what to capture 
+        # group_names : key,value pairs where key is the feature name
+        #               and value is the group number
+        #
+        # example:
+        #   ps.extractFeature("hwthread took (\d+) seconds", time=1)
+        #
+        # Note: the extracted features are assumed to be numbers
+        # two stars means that there is an argument name and argument value
 	def extractFeature(self, pattern, combiner = sum, **group_names):
 		for name, group in group_names.items():
 			self.features.append(Extracted(name, combiner, pattern, group))
@@ -197,7 +197,7 @@ class ProgramSet:
                         # cpus_to_use is a list
 			cpus_to_use = take(len(p.commands), cpus)
 		
-      # for each execution, create its command string
+                        # for each execution, create its command string
 			exec_group = []			
                         # it is itertools library; this creates an iterator that goes 1 to infinity
 			for (i, cpu, comm) in zip(it.count(1), cpus_to_use, p.commands):
@@ -239,7 +239,7 @@ class ProgramSet:
 			return [mkMask(i) for i in range(numItems)]
 		
 		# TODO give option to divide cache by core or by program
-    # it is probably just better overall to manually set CAT classes
+                # it is probably just better overall to manually set CAT classes
 		if self.autoAssignCAT:
 			for clazz, cpu, catMask in zip(it.count(1), cpus, assignCAT(cpus)):
 				line(f"pqos -e 'llc:{clazz}={catMask}'")
@@ -249,7 +249,7 @@ class ProgramSet:
                 # explicit way to implement waiting for all
 		line("declare -a pids=()")
 
-    # write out the commands; run command, capture pid, and wait for pid later
+                # write out the commands; run command, capture pid, and wait for pid later
 		line(''.join([f"{exe.commandStr} & pids+=($!)\n" for group in execs for exe in group]))
 		# write the script barrier that waits for all commands to finish
                 # line below: count how many wait statements needed
@@ -268,8 +268,7 @@ class ProgramSet:
 		 info.write(self.__repr__())
 		 info.close()
 
-	# capture features from one execution's output
-  # by accessing the output files produced
+	# capture features from one execution's output by accessing the output files produced
 	def getFeatures(self, execution : Execution):
 		stat = dict()
                 # go through each feature
@@ -296,9 +295,9 @@ class ProgramSet:
 					stat[name] = f(*map(lambda a: stat[a], args))
 		return stat
 
-  # given one execution group (one 'program'),
-  # collect each 'thread's features from its produced output files
-  # combine the features into single program-level metrics
+        # given one execution group (one 'program'),
+        # collect each 'thread's features from its produced output files
+        # combine the features into single program-level metrics
 	def collectStats(self, execs : List[Execution]):
 		stats = list(map(self.getFeatures, execs))
                 # combine from all instances
@@ -308,7 +307,7 @@ class ProgramSet:
 	# create a script for this program set
 	# run it
 	# return the collected metrics as a list of dictionaries
-  # where item i is collected metrics for program i
+        # where item i is collected metrics for program i
 	def run(self, stamp="nickwinsten"):
 		path = os.getcwd() + "/" + self.dir
 		if not os.path.exists(path):

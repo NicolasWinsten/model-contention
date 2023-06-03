@@ -4,7 +4,7 @@
 
 
 import sys
-sys.path.append("/home/winsten1/pset")
+sys.path.append("../pset")
 from pset import Program, ProgramSet
 import numpy
 import random

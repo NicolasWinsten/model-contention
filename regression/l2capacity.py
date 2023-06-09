@@ -7,7 +7,7 @@
 # pinpointing an array size that results in the most L2 hits
 #
 # At least on octomore, `getconf -a | grep CACHE` will report the correct cache sizes
-# 
+#
 
 import sys
 sys.path.append("../pset")
@@ -17,10 +17,10 @@ import pandas as pd
 
 
 def program(arraysize):
-	arrayAccesses = 200000000
-	delay = 0
-	command = f"./randpd {arraysize} {arrayAccesses} {delay}"
-	return Program([command], label = f"size{arraysize}")
+    arrayAccesses = 200000000
+    delay = 0
+    command = f"./randpd {arraysize} {arrayAccesses} {delay}"
+    return Program([command], label = f"size{arraysize}")
 
 ps = ProgramSet(timeout='20s', cpus = range(18,36))
 
@@ -34,17 +34,16 @@ ps.addEvent("offcore_response.all_data_rd.llc_miss.local_dram", sum)
 data = pd.DataFrame()
 
 for arraySize in [20000, 22000, 24000, 26000, 28000, 30000, 32000, 34000]:
-		prog = program(arraySize)
+    prog = program(arraySize)
 
-		print("running", prog)
-		ps.dir = f"l2-capacity-data"
-		ps.setPrograms([prog])
-		[results] = ps.run(f"X")
+    print("running", prog)
+    ps.dir = f"l2-capacity-data"
+    ps.setPrograms([prog])
+    [results] = ps.run(f"X")
 
-		row = {'arraysize': arraySize, **results}
+    row = {'arraysize': arraySize, **results}
 
-		data = pd.concat([data, pd.DataFrame([row])], axis=0, ignore_index=True)
+    data = pd.concat([data, pd.DataFrame([row])], axis=0, ignore_index=True)
 
 data.to_csv("l2-cap.csv", index=False)
 print(data)
-

@@ -19,6 +19,7 @@ import numpy
 import pandas as pd
 import random
 import os
+import subprocess
 
 possible_delays = [0,1,2,3,4,5,6,12,18,24,32,64]
 
@@ -36,6 +37,9 @@ def program(delay):
     command = f"./rpd -with-outer-loop {arraySize} {stride} {reps} {delay}"
     # create 7 "threads" (instances) of the command
     return Program([command]*7, label = f"delay{delay}")
+
+subprocess.run(["cp", "../syntheticbenchmarks/rpd.c", "."])
+subprocess.run(["gcc", "-O2", "rpd.c", "-o", "rpd"])
 
 ps = ProgramSet(timeout='20s', cpus = range(18,36))
 

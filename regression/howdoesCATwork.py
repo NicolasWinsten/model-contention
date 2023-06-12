@@ -6,6 +6,7 @@ import numpy
 import random
 import pandas as pd
 import os
+import subprocess
 
 # create program object whose working set resides in L3
 def work_program():
@@ -21,6 +22,9 @@ def work_program():
 def spin_program():
     num_loops = 999999999
     return Program([f"./spin {num_loops}"], label="spin")
+
+subprocess.run(["cp", "../syntheticbenchmarks/spin.c", "."])
+subprocess.run(["gcc", "-O1", "spin.c", "-o", "spin"])
 
 ps = ProgramSet(timeout = '5s', cpus = [18,19])
 

@@ -14,6 +14,7 @@ sys.path.append("../pset")
 from pset import Program, ProgramSet
 import numpy
 import pandas as pd
+import subprocess
 
 
 def program(arraysize):
@@ -21,6 +22,9 @@ def program(arraysize):
     delay = 0
     command = f"./randpd {arraysize} {arrayAccesses} {delay}"
     return Program([command], label = f"size{arraysize}")
+
+subprocess.run(["cp", "../syntheticbenchmarks/randpd.c", "."])
+subprocess.run(["gcc", "-O2", "randpd.c", "-o", "randpd"])
 
 ps = ProgramSet(timeout='20s', cpus = range(18,36))
 

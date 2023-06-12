@@ -10,6 +10,7 @@ import numpy
 import random
 import pandas as pd
 import os
+import subprocess
 
 # create program object for an out-of-cache program that constantly hits RAM
 def program(delay):
@@ -18,6 +19,9 @@ def program(delay):
     reps = 9999999                          # exorbitant number of repetitions to ensure the timeout normalizes all runtimes
     command = f"./rpd -with-outer-loop {arraySize} {stride} {reps} {delay}"
     return Program([command], label = f"d{delay}")
+
+subprocess.run(["cp", "../syntheticbenchmarks/rpd.c", "."])
+subprocess.run(["gcc", "-O2", "rpd.c", "-o", "rpd"])
 
 ps = ProgramSet(timeout='20s', cpus = range(18,36))
 

@@ -10,14 +10,18 @@ import numpy
 import random
 import pandas as pd
 import os
+import subprocess
 
 # create program object for an out-of-cache program that constantly hits RAM
 def program(delay):
-	arraySize = 5000000		# 5M longs -> 40MB which fits into L3 on octomore (45MiB)
-	stride = 8						# large enough stride to ensure cache misses on each array access
-	reps = 9999999				# exorbitant number of repetitions to ensure the timeout normalizes all runtimes
-	command = f"./rpd -with-outer-loop {arraySize} {stride} {reps} {delay}"
-	return Program([command], label = f"d{delay}")
+    arraySize = 5000000             # 5M longs -> 40MB which fits into L3 on octomore (45MiB)
+    stride = 8                                              # large enough stride to ensure cache misses on each array access
+    reps = 9999999                          # exorbitant number of repetitions to ensure the timeout normalizes all runtimes
+    command = f"./rpd -with-outer-loop {arraySize} {stride} {reps} {delay}"
+    return Program([command], label = f"d{delay}")
+
+subprocess.run(["cp", "../syntheticbenchmarks/rpd.c", "."])
+subprocess.run(["gcc", "-O2", "rpd.c", "-o", "rpd"])
 
 ps = ProgramSet(timeout='20s', cpus = range(18,36))
 
@@ -40,47 +44,46 @@ data = pd.DataFrame()
 delays = [0,1,2,3,4,5,6,7,8,9,12,15,18,24,32,64]
 
 for _ in range(100):
-		[delayX, delayY] = random.choices(delays, k=2)
+    [delayX, delayY] = random.choices(delays, k=2)
 
-		progX = program(delayX)
-		progY = program(delayY)
+    progX = program(delayX)
+    progY = program(delayY)
 
-		# collect baseline features for each program
-		print("running", progX)
-		ps.setPrograms([progX])
-                # X is the descriptive string for this run
-		baseX = ps.run(f"X")[0]
+    # collect baseline features for each program
+    print("running", progX)
+    ps.setPrograms([progX])
+    # X is the descriptive string for this run
+    baseX = ps.run(f"X")[0]
 
-		print("running", progY)
-		ps.setPrograms([progY])
-		baseY = ps.run(f"Y")[0]
+    print("running", progY)
+    ps.setPrograms([progY])
+    baseY = ps.run(f"Y")[0]
 
-		# run them together for contended features
-		print("running contended")
-		ps.setPrograms([progX,progY])
-		[contendedX, contendedY] = ps.run(f"XY")
-		
-		slowdownX = baseX['progress'] / contendedX['progress']
-		slowdownY = baseY['progress'] / contendedY['progress']
+    # run them together for contended features
+    print("running contended")
+    ps.setPrograms([progX,progY])
+    [contendedX, contendedY] = ps.run(f"XY")
 
-		row = {}
-		row['delayX'] = delayX
-		for k,v in baseX.items():
-			row[k+'X'] = v
+    slowdownX = baseX['progress'] / contendedX['progress']
+    slowdownY = baseY['progress'] / contendedY['progress']
 
-		row['delayY'] = delayY
-		for k,v in baseY.items():
-			row[k+'Y'] = v
-		for k,v in contendedX.items():
-			row[k+"X'"] = v
-		for k,v in contendedY.items():
-			row[k+"Y'"] = v
-		row['slowdownX'] = slowdownX
-		row['slowdownY'] = slowdownY
+    row = {}
+    row['delayX'] = delayX
+    for k,v in baseX.items():
+        row[k+'X'] = v
+
+    row['delayY'] = delayY
+    for k,v in baseY.items():
+        row[k+'Y'] = v
+    for k,v in contendedX.items():
+        row[k+"X'"] = v
+    for k,v in contendedY.items():
+        row[k+"Y'"] = v
+    row['slowdownX'] = slowdownX
+    row['slowdownY'] = slowdownY
 
 
-		data = pd.concat([data, pd.DataFrame([row])], axis=0, ignore_index=True)
-		
+    data = pd.concat([data, pd.DataFrame([row])], axis=0, ignore_index=True)
+
 data.to_csv(scriptName + ".csv", index=False)
 print(data)
-
